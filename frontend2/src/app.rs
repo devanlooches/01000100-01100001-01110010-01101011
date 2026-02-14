@@ -21,11 +21,22 @@ pub struct NpyData {
 pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
     use npyz::NpyFile;
 
-    // TODO: replace with an actual API call once the backend is built.
-    // For now, read the file from disk next to the binary.
-    let path = format!("{run_id}.npy");
-    let bytes = std::fs::read(&path)
-        .map_err(|e| ServerFnError::new(format!("failed to read {path}: {e}")))?;
+    // TODO: update the base URL once the Django API is deployed.
+    let api_url = format!("http://localhost:8000/api/simulations/{run_id}/npy");
+
+    let bytes = match reqwest::get(&api_url).await {
+        Ok(resp) if resp.status().is_success() => resp
+            .bytes()
+            .await
+            .map_err(|e| ServerFnError::new(format!("failed to read response body: {e}")))?
+            .to_vec(),
+        _ => {
+            // Fallback: read from local disk while the API is not yet available.
+            let path = format!("{run_id}.npy");
+            std::fs::read(&path)
+                .map_err(|e| ServerFnError::new(format!("failed to read {path}: {e}")))?
+        }
+    };
 
     let npy = NpyFile::new(&bytes[..])
         .map_err(|e| ServerFnError::new(format!("failed to parse npy: {e}")))?;

@@ -36,7 +36,8 @@ async fn main() -> std::io::Result<()> {
                             <head>
                                 <meta charset="utf-8"/>
                                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-                                <script src="https://cdn.jsdelivr.net/npm/three@0.133.1/build/three.min.js"></script>
+                                <script type="importmap">{r#"{"imports":{"three":"https://unpkg.com/three@0.174.0/build/three.module.min.js","three/addons/":"https://unpkg.com/three@0.174.0/examples/jsm/"}}"#}</script>
+                                <script type="module" src="/assets/three-shim.js"></script>
                                 <AutoReload options=leptos_options.clone() />
                                 <HydrationScripts options=leptos_options.clone()/>
                                 <MetaTags/>

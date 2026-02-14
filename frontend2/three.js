@@ -25,6 +25,9 @@ export function initScene(canvasId, containerId) {
     const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     camera.position.z = 3;
 
+    const controls = new window.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
     const geometry = new THREE.BoxGeometry();
     const material = new THREE.MeshNormalMaterial();
     const cube = new THREE.Mesh(geometry, material);
@@ -47,6 +50,7 @@ export function initScene(canvasId, containerId) {
 
     function animate() {
         requestAnimationFrame(animate);
+        controls.update();
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
         renderer.render(scene, camera);
