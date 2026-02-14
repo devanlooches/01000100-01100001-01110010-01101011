@@ -69,7 +69,14 @@ fn HomePage() -> impl IntoView {
                 </div>
 
         <div class="ui-overlay">
-            <h1 class="title">"Dark Matter Simulator"</h1>
+            <h1 class="title">
+                "01100100011000010111001001101011(DARK)"
+            </h1>
+
+            <p class="main-hint" class:hidden=move || splash_visible.get()>
+                "Press O to open menu"
+            </p>
+
             <div class="settings-pane" class:settings-open=settings_open>
                 <h2>"Settings"</h2>
                 <p class="settings-hint">"Press O to close"</p>

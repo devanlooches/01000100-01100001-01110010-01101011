@@ -38,7 +38,25 @@ html, body {
     font-size: 24px;
     font-weight: 600;
     color: white;
+    animation: pulseGlow 2.5s ease-in-out infinite alternate;
 }
+/*new*/
+.main-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    margin: 0;
+    font-size: 14px;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: rgba(255,255,255,0.5);
+    transition: opacity 0.5s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+/*new*/
 
 .settings-pane {
     position: absolute;
@@ -74,8 +92,9 @@ html, body {
     color: rgba(255, 255, 255, 0.4);
 }
 
+/*SLPASH WELCOME PAGE*/
 .splash {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: radial-gradient(circle at center, #111 0%, #000 70%);
     display: flex;
@@ -91,10 +110,33 @@ html, body {
 .splash-title {
     font-size: 100px;
     color: white;
-    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    animation: pulseGlow 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from {
+        text-shadow:
+            0 0 10px rgba(255,255,255,0.5),
+            0 0 20px rgba(0,150,255,0.4);
+    }
+    to {
+        text-shadow:
+            0 0 25px rgba(255,255,255,0.9),
+            0 0 50px rgba(0,150,255,0.8);
+    }
+}
+
+.splash-sub {
+    font-size: 27px;
+    color: white;
+    margin-top: 10px;
+    opacity: 0.5;
 }
 
 .splash-hidden {
     opacity: 0;
     pointer-events: none;
 }
+
+
+/*-------------------------------------------*/
