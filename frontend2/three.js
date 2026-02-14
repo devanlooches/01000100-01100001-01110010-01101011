@@ -1,175 +1,248 @@
+// Imports
+
+const THREE = window.THREE;
+if (!THREE) {
+    console.error('THREE not loaded');
+}
+
+const OrbitControls = window.OrbitControls;
+if (!OrbitControls) {
+    console.error('OrbitControls not loaded');
+}
+
+// Config
+
+const BG_COLOUR = new THREE.Color(0x000000);
+const CUBE_COLOUR = new THREE.Color(0xff5500);
+const CUBE_OPACITY_COEFFICIENT = 0.05;
+const CUBE_RENDER_SIZE = 5;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 15;
+const DEFUALT_ZOOM = 10;
+const ZOOM_SPEED = 5;
+const CAMERA_DAMPING = 0.05;
+const DENSITY_MAX = 1000;
+
+// Global Variables
+
 let initialized = false;
-let dimension = 0;
-let alphas = new Float32Array();
-let count = 0;
-let geom = null;
+let cubeLength;
+let opacities;
+let cubeletCount;
+let geometry;
+let scene;
+let cubeletSize;
+let animating;
+let container;
+let camera;
+let renderer;
+let controls;
+let canvas;
+
+// Public Functions
+
+// Initialize 
 
 export function initScene(canvasId, containerId) {
+
     if (initialized) return;
 
-    const THREE = window.THREE;
-    const OrbitControls = window.OrbitControls;
-    if (!THREE) {
-        console.error('THREE not loaded');
-        return;
-    }
-    if (!OrbitControls) {
-        console.error('OrbitControls not loaded');
-        return;
-    }
-
-    const container = document.getElementById(containerId);
-    const canvasEl = document.getElementById(canvasId);
-    if (!container || !canvasEl) {
+    // initialize container & canvas
+    container = document.getElementById(containerId);
+    canvas = document.getElementById(canvasId);
+    if (!container || !canvas) {
         console.error('Could not find container or canvas');
         return;
     }
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    // initialize scene
+    scene = new THREE.Scene();
+    scene.background = BG_COLOUR;
 
-    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    const size = 5;
-    camera.position.set(0, 0, size * 2);
+    // initialize camera
+    camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.position.set(0, 0, DEFUALT_ZOOM);
 
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
+    // initialize renderer
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    // initialize controls
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
-    controls.minDistance = size / 3;
-    controls.maxDistance = size * 3;
-    controls.zoomSpeed = 5.0;
+    controls.enableDamping = true;
+    controls.dampingFactor = CAMERA_DAMPING;
+    controls.minDistance = MIN_ZOOM;
+    controls.maxDistance = MAX_ZOOM;
+    controls.zoomSpeed = ZOOM_SPEED;
+
+    // initialize cube & cubelets with random opacities
+    initializeCube(64);
+    randomizeOpacities();
 
     initialized = true;
+    animating = false;
 
-    function initializeGrid(n) {
-
-        dimension = n;
-        count = n * n * n;
-        alphas = new Float32Array(count);
-        const cubeSize = size / n;
-        geom = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-
-        let mat = new THREE.MeshStandardMaterial({
-            color: 0xff5500,
-            transparent: true,
-            depthWrite: false,
-        });
-
-        mat.onBeforeCompile = (shader) => {
-            shader.vertexShader = `
-        attribute float instanceAlpha;
-        varying float vInstanceAlpha;
-        ${shader.vertexShader}
-      `.replace(
-                `void main() {`,
-                `void main() {
-          vInstanceAlpha = instanceAlpha;`
-            );
-
-            shader.fragmentShader = `
-        varying float vInstanceAlpha;
-        ${shader.fragmentShader}
-      `.replace(
-                `#include <opaque_fragment>`,
-                `#include <opaque_fragment>
-          gl_FragColor.a *= vInstanceAlpha;`
-            );
-        };
-
-        for (let i = 0; i < count; i++) {
-            alphas[i] = Math.random() / 20;
-        }
-
-        geom.setAttribute('instanceAlpha', new THREE.InstancedBufferAttribute(alphas, 1));
-
-        const mesh = new THREE.InstancedMesh(geom, mat, count);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
-        const dummy = new THREE.Object3D();
-        const color = new THREE.Color();
-
-        let i = 0;
-        for (let x = 0; x < n; x++) {
-            for (let y = 0; y < n; y++) {
-                for (let z = 0; z < n; z++) {
-                    dummy.position.set(
-                        (cubeSize * (x + 0.5)) - (size / 2),
-                        (cubeSize * (y + 0.5)) - (size / 2),
-                        (cubeSize * (z + 0.5)) - (size / 2)
-                    );
-                    dummy.updateMatrix();
-                    mesh.setMatrixAt(i, dummy.matrix);
-
-                    color.setHex(0xffffff);
-                    mesh.setColorAt(i, color);
-
-                    i++;
-                }
-            }
-        }
-        scene.add(mesh);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    }
-
-    let animating = false;
-
-    function resize() {
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        if (w === 0 || h === 0) return;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-        if (!animating) {
-            animating = true;
-            animate();
-        }
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-    initializeGrid(64);
+    // watches for window being resized during runtime
     new ResizeObserver(resize).observe(container);
 }
 
-export function setOpacityFromArray(array) {
-    //array format: array[x][y][z] = density (0-1)
-    if (array.length != dimension * dimension * dimension) {
-        console.error('Array size does not match initialized size');
-        return;
+// Randomize Opacities
+
+export function randomizeOpacities() {
+
+    for (let i = 0; i < cubeletCount; i++) {
+        opacities[i] = Math.random() * CUBE_OPACITY_COEFFICIENT;
     }
-    for (let i = 0; i < count; i++) {
-        alphas[i] = array[i];
-    }
-    geom.setAttribute('instanceAlpha', new THREE.InstancedBufferAttribute(alphas, 1));
+    geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
 }
 
-export function randomizeOpacity() {
-    let tempArray = new Float32Array(count);
-    for (let i=0; i<count; i++){
-        tempArray[i] = Math.random()/20;
+// Set Opacities from Density Array
+
+export function setOpacitiesFromDensities(array) {
+
+    // Convert all densities to opacities
+    for (let i = 0; i < array.length; i++) {
+        array[i] = array[i] * CUBE_OPACITY_COEFFICIENT / DENSITY_MAX;
     }
-    setOpacityFromArray(tempArray)
+    setOpacities(array);
 }
+
+// Keypress Listener
 
 export function listenForKey(key, callback) {
     window.addEventListener('keydown', (ev) => {
         if (ev.key === key) {
             callback();
         }
-        if(ev.key == 'e'){
-            randomizeOpacity();
-        }
     });
+}
+
+// Private Functions
+
+// Initialize Cube 
+
+function initializeCube(size) {
+
+    // set cube variables
+    cubeLength = size;
+    cubeletCount = Math.pow(cubeLength, 3);
+    opacities = new Float32Array(cubeletCount);
+    cubeletSize = CUBE_RENDER_SIZE / cubeLength;
+
+    // generate cubelet geometry and material
+    geometry = new THREE.BoxGeometry(cubeletSize, cubeletSize, cubeletSize);
+    let mat = new THREE.MeshStandardMaterial({
+        color: CUBE_COLOUR,
+        transparent: true,
+        depthWrite: false,
+    });
+
+
+    // apply custom material shader to allow for opacity changes
+    mat.onBeforeCompile = (shader) => {
+        shader.vertexShader = `
+        attribute float opacity;
+        varying float vOpacity;
+        ${shader.vertexShader}
+      `.replace(
+            `void main() {`,
+            `void main() {
+          vOpacity = opacity;`
+        );
+        shader.fragmentShader = `
+        varying float vOpacity;
+        ${shader.fragmentShader}
+      `.replace(
+            `#include <opaque_fragment>`,
+            `#include <opaque_fragment>
+          gl_FragColor.a *= vOpacity;`
+        );
+    };
+
+    // initialize opacities
+    geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
+
+    // generate mesh of cubelets
+    const mesh = new THREE.InstancedMesh(geometry, mat, cubeletCount);
+
+    // initialize meshes
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    // initialize dummy object used for position generation
+    const dummy = new THREE.Object3D();
+
+    // generate dummy (x, y, z) positions and apply to cubelets
+    let i = 0;
+    for (let x = 0; x < cubeLength; x++) {
+        for (let y = 0; y < cubeLength; y++) {
+            for (let z = 0; z < cubeLength; z++) {
+                dummy.position.set(
+                    // offset positions by cube size to centre cube
+                    (cubeletSize * (x + 0.5)) - (CUBE_RENDER_SIZE / 2),
+                    (cubeletSize * (y + 0.5)) - (CUBE_RENDER_SIZE / 2),
+                    (cubeletSize * (z + 0.5)) - (CUBE_RENDER_SIZE / 2)
+                );
+                // update position matrix
+                dummy.updateMatrix();
+                // push position matrix to cubelet
+                mesh.setMatrixAt(i, dummy.matrix);
+                i++;
+            }
+        }
+    }
+
+    // add cubelets to scene
+    scene.add(mesh);
+
+    // add soft lighting to scene
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+}
+
+// Set Opacities from Array
+
+function setOpacities(array) {
+
+    // verify input array has a matching length
+    if (array.length != cubeLength * cubeLength * cubeLength) {
+        console.error('Array size does not match initialized size');
+        return;
+    }
+
+    // assign array of opacities to array of densities
+    for (let i = 0; i < cubeletCount; i++) {
+        opacities[i] = array[i];
+    }
+
+    geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
+}
+
+// Dynamically Resize Container to Window
+
+function resize() {
+
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (w === 0 || h === 0) return;
+
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+
+    if (!animating) {
+        animating = true;
+        animate();
+    }
+
+}
+
+// Animation Loop
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
 }
