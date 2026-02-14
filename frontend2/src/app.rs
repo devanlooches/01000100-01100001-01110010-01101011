@@ -34,10 +34,35 @@ pub fn App() -> impl IntoView {
     }
 }
 
+#[cfg(not(feature = "ssr"))]
+#[wasm_bindgen(module = "/three.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = listenForKey)]
+    fn listen_for_key(key: &str, callback: &Closure<dyn Fn()>);
+}
+
 #[component]
 fn HomePage() -> impl IntoView {
+    let settings_open = RwSignal::new(false);
+
+    #[cfg(not(feature = "ssr"))]
+    {
+        let closure = Closure::new(move || {
+            settings_open.update(|open| *open = !*open);
+        });
+        listen_for_key("o", &closure);
+        closure.forget();
+    }
+
     view! {
         <DarkMatterScene/>
+        <div class="ui-overlay">
+            <h1 class="title">"Dark Matter Simulator"</h1>
+            <div class="settings-pane" class:settings-open=settings_open>
+                <h2>"Settings"</h2>
+                <p class="settings-hint">"Press O to close"</p>
+            </div>
+        </div>
     }
 }
 

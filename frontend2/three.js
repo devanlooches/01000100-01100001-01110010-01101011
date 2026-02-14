@@ -19,11 +19,10 @@ export function initScene(canvasId, containerId) {
     initialized = true;
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     camera.position.z = 3;
 
     const geometry = new THREE.BoxGeometry();
@@ -31,17 +30,35 @@ export function initScene(canvasId, containerId) {
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
+    let animating = false;
+
+    function resize() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        if (w === 0 || h === 0) return;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        if (!animating) {
+            animating = true;
+            animate();
+        }
+    }
+
     function animate() {
+        requestAnimationFrame(animate);
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
         renderer.render(scene, camera);
-        requestAnimationFrame(animate);
     }
-    animate();
 
-    window.addEventListener('resize', () => {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+    new ResizeObserver(resize).observe(container);
+}
+
+export function listenForKey(key, callback) {
+    window.addEventListener('keydown', (ev) => {
+        if (ev.key === key) {
+            callback();
+        }
     });
 }
