@@ -124,6 +124,16 @@ fn HomePage() -> impl IntoView {
 
             <div class="settings-pane" class:settings-open=settings_open>
                 <h2>"Settings"</h2>
+                <div class="input-group">
+                        <label for="star-count">"Galaxy Count"</label>
+                        <input
+                            id="star-count"
+                            type="number"
+                            min="50"
+                            max="500"
+                            value="500"
+                        />
+                 </div>
                 <p class="settings-hint">"Press O to close"</p>
             </div>
         </div>

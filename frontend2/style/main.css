@@ -71,9 +71,32 @@ html, body {
     box-sizing: border-box;
     font-family: system-ui, -apple-system, sans-serif;
     color: #e0e0e0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
     transform: translateX(-100%);
     transition: transform 0.25s ease;
 }
+
+.input-group input {
+    width: 100%;
+    padding: 8px 4px;
+    font-size: 16px;
+
+
+
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+
+    color: #00f5ff;
+    outline: none;
+
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
 
 .settings-pane.settings-open {
     transform: translateX(0);
@@ -113,17 +136,24 @@ html, body {
     animation: pulseGlow 2.5s ease-in-out infinite alternate;
 }
 
+.splash-title:hover {
+    text-shadow:
+        0 0 20px rgba(200, 150, 255, 0.9),
+        0 0 40px rgba(180, 100, 255, 0.8),
+        0 0 80px rgba(150, 80, 255, 0.7);
+}
+
 @keyframes pulseGlow {
     from {
-        text-shadow:
-            0 0 10px rgba(255,255,255,0.5),
-            0 0 20px rgba(0,150,255,0.4);
-    }
-    to {
-        text-shadow:
-            0 0 25px rgba(255,255,255,0.9),
-            0 0 50px rgba(0,150,255,0.8);
-    }
+            text-shadow:
+                0 0 10px rgba(200,150,255,0.5),
+                0 0 20px rgba(180,100,255,0.4);
+        }
+        to {
+            text-shadow:
+                0 0 25px rgba(220,170,255,0.9),
+                0 0 50px rgba(160,90,255,0.8);
+        }
 }
 
 .splash-sub {
