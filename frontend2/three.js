@@ -2,7 +2,6 @@ let initialized = false;
 
 export function initScene(canvasId, containerId) {
     if (initialized) return;
-    initialized = true;
 
     const THREE = window.THREE;
     if (!THREE) {
@@ -16,6 +15,8 @@ export function initScene(canvasId, containerId) {
         console.error('Could not find container or canvas');
         return;
     }
+
+    initialized = true;
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
