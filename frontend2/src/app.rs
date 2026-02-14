@@ -43,6 +43,7 @@ extern "C" {
 
 #[component]
 fn HomePage() -> impl IntoView {
+    let splash_visible = RwSignal::new(true);
     let settings_open = RwSignal::new(false);
 
     #[cfg(not(feature = "ssr"))]
@@ -55,7 +56,18 @@ fn HomePage() -> impl IntoView {
     }
 
     view! {
+
         <DarkMatterScene/>
+
+        <div
+                    class="splash"
+                    class:splash-hidden=move || !splash_visible.get()
+                    on:click=move |_| splash_visible.set(false)
+                >
+                    <h1 class="splash-title">"Dark Matter Simulator"</h1>
+                    <p class="splash-sub">"Click to begin"</p>
+                </div>
+
         <div class="ui-overlay">
             <h1 class="title">"Dark Matter Simulator"</h1>
             <div class="settings-pane" class:settings-open=settings_open>
