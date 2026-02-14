@@ -4,6 +4,40 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
+use serde::{Deserialize, Serialize};
+
+/// The parsed contents of a .npy file: a flat data buffer plus its shape.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NpyData {
+    /// Flattened array values (row-major / C order).
+    pub data: Vec<f32>,
+    /// Original shape, e.g. [100, 3] for 100 particles × 3 coords.
+    pub shape: Vec<u64>,
+}
+
+/// Server function that loads a .npy file and returns it as JSON-serialisable data.
+/// `run_id` is a placeholder for a future API parameter (e.g. "run0100_dm").
+#[server]
+pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
+    use npyz::NpyFile;
+
+    // TODO: replace with an actual API call once the backend is built.
+    // For now, read the file from disk next to the binary.
+    let path = format!("{run_id}.npy");
+    let bytes = std::fs::read(&path)
+        .map_err(|e| ServerFnError::new(format!("failed to read {path}: {e}")))?;
+
+    let npy = NpyFile::new(&bytes[..])
+        .map_err(|e| ServerFnError::new(format!("failed to parse npy: {e}")))?;
+
+    let shape = npy.shape().to_vec();
+
+    let data: Vec<f32> = npy
+        .into_vec::<f32>()
+        .map_err(|e| ServerFnError::new(format!("failed to read npy data as f32: {e}")))?;
+
+    Ok(NpyData { data, shape })
+}
 
 #[cfg(not(feature = "ssr"))]
 use wasm_bindgen::prelude::*;
