@@ -168,5 +168,127 @@ html, body {
     pointer-events: none;
 }
 
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(8px);
+  display: none;
+  z-index: 9999;
+}
+
+.about-overlay.open {
+  display: block;
+}
+
+/* Panel */
+.about-panel {
+  max-width: 950px;
+  margin: 80px auto;
+  padding: 50px 30px;
+  color: white;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 🔥 Cinematic glowing title */
+.about-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 64px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #ffffff;
+  text-shadow:
+    0 0 10px rgba(0, 150, 255, 0.8),
+    0 0 20px rgba(0, 150, 255, 0.6),
+    0 0 40px rgba(0, 150, 255, 0.4);
+}
+
+/* Subtitle */
+.about-sub {
+  font-size: 22px;
+  font-weight: 300;
+  opacity: 0.8;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+}
+
+/* Description */
+.more-info-text {
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 700px;
+  margin: 0 auto 50px auto;
+  opacity: 0.85;
+}
+
+/* Team Grid */
+.team-grid {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+/* Team Cards */
+.team-card {
+  background: rgba(255,255,255,0.05);
+  padding: 25px 30px;
+  border-radius: 12px;
+  min-width: 220px;
+  transition: 0.3s ease;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.team-card:hover {
+  transform: translateY(-8px);
+  background: rgba(0, 150, 255, 0.08);
+  border: 1px solid rgba(0,150,255,0.4);
+}
+
+/* Names */
+.team-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+/* Roles */
+.team-text {
+  font-size: 16px;
+  font-weight: 300;
+  opacity: 0.85;
+}
+
+/* Button */
+.back-btn {
+  margin-top: 50px;
+  padding: 12px 28px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(0,150,255,0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.back-btn:hover {
+  background: rgba(0,150,255,0.2);
+  box-shadow: 0 0 15px rgba(0,150,255,0.6);
+}
+
+.about-hint {
+  margin-top: 20px;
+  font-size: 14px;
+  opacity: 0.5;
+  letter-spacing: 1px;
+}
 
 /*-------------------------------------------*/

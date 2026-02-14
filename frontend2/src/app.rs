@@ -58,6 +58,9 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     #[wasm_bindgen(js_name = initScene)]
     fn init_scene(canvas_id: &str, container_id: &str);
+
+    #[wasm_bindgen(js_name = listenForKey)]
+    fn listen_for_key(key: &str, callback: &Closure<dyn Fn()>);
 }
 
 #[component]
@@ -79,39 +82,42 @@ pub fn App() -> impl IntoView {
     }
 }
 
-#[cfg(not(feature = "ssr"))]
-#[wasm_bindgen(module = "/three.js")]
-extern "C" {
-    #[wasm_bindgen(js_name = listenForKey)]
-    fn listen_for_key(key: &str, callback: &Closure<dyn Fn()>);
-}
-
 #[component]
 fn HomePage() -> impl IntoView {
     let splash_visible = RwSignal::new(true);
     let settings_open = RwSignal::new(false);
 
+    // NEW: About overlay open/close
+    let about_open = RwSignal::new(false);
+
     #[cfg(not(feature = "ssr"))]
     {
+        // O toggles settings
         let closure = Closure::new(move || {
             settings_open.update(|open| *open = !*open);
         });
         listen_for_key("o", &closure);
         closure.forget();
+
+        // I toggles About overlay
+        let about_toggle = Closure::new(move || {
+            about_open.update(|v| *v = !*v);
+        });
+        listen_for_key("i", &about_toggle);
+        about_toggle.forget();
     }
 
     view! {
-
         <DarkMatterScene/>
 
         <div
-                  class="splash"
-                  class:splash-hidden=move || !splash_visible.get()
-                  on:click=move |_| splash_visible.set(false)
-                >
-                    <h1 class="splash-title">"Dark Matter Simulator"</h1>
-                    <p class="splash-sub">"Click to begin"</p>
-                </div>
+            class="splash"
+            class:splash-hidden=move || !splash_visible.get()
+            on:click=move |_| splash_visible.set(false)
+        >
+            <h1 class="splash-title">"Dark Matter Simulator"</h1>
+            <p class="splash-sub">"Click to begin"</p>
+        </div>
 
         <div class="ui-overlay">
             <h1 class="title">
@@ -119,24 +125,71 @@ fn HomePage() -> impl IntoView {
             </h1>
 
             <p class="main-hint" class:hidden=move || splash_visible.get()>
-                "Press O to open menu"
+                "Press O to open menu · Press I for About"
             </p>
 
             <div class="settings-pane" class:settings-open=settings_open>
                 <h2>"Settings"</h2>
                 <div class="input-group">
-                        <label for="star-count">"Galaxy Count"</label>
-                        <input
-                            id="star-count"
-                            type="number"
-                            min="50"
-                            max="500"
-                            value="500"
-                        />
-                 </div>
+                    <label for="star-count">"Galaxy Count"</label>
+                    <input
+                        id="star-count"
+                        type="number"
+                        min="50"
+                        max="500"
+                        value="500"
+                    />
+                </div>
                 <p class="settings-hint">"Press O to close"</p>
             </div>
         </div>
+
+
+       <div class="about-overlay" class:open=move || about_open.get()>
+           <div class="about-panel">
+               <h1 class="about-title">"About"</h1>
+               <p class="about-sub">"The team behind Dark Matter Simulator"</p>
+
+               <div class="more-info">
+                   <p class="more-info-text">
+                       "Our project is a simulation of dark matter dispersal."
+                   </p>
+               </div>
+
+               <div class="team-grid">
+                   <div class="team-card">
+                       <div class="team-name">"Miguel Angel"</div>
+                       <div class="team-text">"Frontend & UI"</div>
+                   </div>
+
+                   <div class="team-card">
+                       <div class="team-name">"Eric"</div>
+                       <div class="team-text">"ML Training"</div>
+                   </div>
+
+                   <div class="team-card">
+                       <div class="team-name">"Isaac"</div>
+                       <div class="team-text">"Pipeline, Frontend & Visualization"</div>
+                   </div>
+
+                   <div class="team-card">
+                       <div class="team-name">"Erin"</div>
+                       <div class="team-text">"Backend & Data"</div>
+                  </div>
+
+                  <div class="team-card">
+                       <div class="team-name">"Yan"</div>
+                       <div class="team-text">""</div>
+                    </div>
+               </div>
+
+               <button class="back-btn" on:click=move |_| about_open.set(false)>
+                   "Back"
+               </button>
+
+               <p class="about-hint">"Press I to close"</p>
+           </div>
+       </div>
     }
 }
 
@@ -148,7 +201,7 @@ fn DarkMatterScene() -> impl IntoView {
     {
         let canvas_ref = canvas_ref.clone();
         Effect::new(move |_| {
-            if let Some(_) = canvas_ref.get() {
+            if canvas_ref.get().is_some() {
                 init_scene("scene-canvas", "scene-container");
             }
         });
@@ -156,7 +209,7 @@ fn DarkMatterScene() -> impl IntoView {
 
     view! {
         <div id="scene-container" class="container">
-                <canvas id="scene-canvas" node_ref=canvas_ref></canvas>
+            <canvas id="scene-canvas" node_ref=canvas_ref></canvas>
         </div>
     }
 }
