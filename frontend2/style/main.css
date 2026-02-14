@@ -85,14 +85,13 @@ html, body {
     cursor: pointer;
     z-index: 1000;
     opacity: 1;
-    transition: opacity 0.5s ease;  /* <-- 0.5 seconds */
+    transition: opacity 0.5s ease;
 }
 
 .splash-title {
+    font-size: 100px;
     color: white;
-    text-shadow:
-        0 0 8px rgba(255,255,255,0.4),
-        0 0 20px rgba(0,150,255,0.4);
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
 }
 
 .splash-hidden {

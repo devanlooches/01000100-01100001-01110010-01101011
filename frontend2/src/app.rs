@@ -60,9 +60,9 @@ fn HomePage() -> impl IntoView {
         <DarkMatterScene/>
 
         <div
-                    class="splash"
-                    class:splash-hidden=move || !splash_visible.get()
-                    on:click=move |_| splash_visible.set(false)
+                  class="splash"
+                  class:splash-hidden=move || !splash_visible.get()
+                  on:click=move |_| splash_visible.set(false)
                 >
                     <h1 class="splash-title">"Dark Matter Simulator"</h1>
                     <p class="splash-sub">"Click to begin"</p>
