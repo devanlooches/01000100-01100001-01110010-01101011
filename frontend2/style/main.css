@@ -125,6 +125,68 @@ html, body {
     font-weight: 300;
 }
 
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.submit-galaxy-btn {
+    margin-top: 0;
+    padding: 10px 16px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(0, 150, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 150, 255, 0.6);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.submit-galaxy-btn:hover:not(:disabled) {
+    background: rgba(0, 150, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 150, 255, 0.6);
+}
+
+.submit-galaxy-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.run-model-btn {
+    padding: 10px 16px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(0, 150, 255, 0.2);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 150, 255, 0.6);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.run-model-btn:hover:not(:disabled) {
+    background: rgba(0, 150, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 150, 255, 0.6);
+}
+
+.run-model-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.model-status {
+    margin: 12px 0 0 0;
+    font-size: 12px;
+    color: rgba(0, 200, 255, 0.8);
+    min-height: 18px;
+}
+
 /* ============================================
    SPLASH SCREEN
    ============================================ */
@@ -345,4 +407,17 @@ html, body {
 .back-btn:hover {
     background: rgba(0,150,255,0.2);
     box-shadow: 0 0 15px rgba(0,150,255,0.6);
+}
+
+
+.audio-player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    opacity: 0.8;
+}
+
+.audio-player:hover {
+    opacity: 1;
 }

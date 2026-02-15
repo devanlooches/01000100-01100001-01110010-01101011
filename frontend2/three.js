@@ -13,7 +13,9 @@ if (!OrbitControls) {
 // Config
 
 const BG_COLOUR = new THREE.Color(0x000000);
-const CUBE_COLOUR = new THREE.Color(0xff5500);
+const GALAXY_COLOUR = new THREE.Color(0x00ff00);
+const DENSITY_COLOUR = new THREE.Color(0xff5500);
+const STAR_COLOUR = new THREE.Color(0xffffff);
 const CUBE_OPACITY_COEFFICIENT = 0.05;
 const CUBE_RENDER_SIZE = 5;
 const MIN_ZOOM = 1;
@@ -22,6 +24,12 @@ const DEFUALT_ZOOM = 10;
 const ZOOM_SPEED = 5;
 const CAMERA_DAMPING = 0.05;
 const DENSITY_MAX = 1000;
+const GALAXY_MAX = 500;
+const GALAXY_MIN = 50;
+const STAR_COUNT = 1000;
+const STAR_DISTANCE = 100;
+const STAR_RANGE = 100;
+const STAR_SIZE = 0.2;
 
 // Global Variables
 
@@ -38,6 +46,9 @@ let camera;
 let renderer;
 let controls;
 let canvas;
+let galaxies;
+let material;
+let mesh;
 
 // Public Functions
 
@@ -81,6 +92,7 @@ export function initScene(canvasId, containerId) {
     // initialize cube & cubelets with random opacities
     initializeCube(64);
     randomizeOpacities();
+    generateStars();
 
     initialized = true;
     animating = false;
@@ -97,14 +109,16 @@ export function randomizeOpacities() {
         opacities[i] = Math.random() * CUBE_OPACITY_COEFFICIENT;
     }
     geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
+    mesh.material.color.set(DENSITY_COLOUR);
 }
 
 // Set Opacities from Density Array
 
 export function setOpacitiesFromDensities(array) {
-
     // Convert all densities to opacities
     for (let i = 0; i < array.length; i++) {
+        if(array[i]<0) array[i] = 0;
+        if(array[i]>DENSITY_MAX) array = DENSITY_MAX;
         array[i] = array[i] * CUBE_OPACITY_COEFFICIENT / DENSITY_MAX;
     }
     setOpacities(array);
@@ -117,7 +131,42 @@ export function listenForKey(key, callback) {
         if (ev.key === key) {
             callback();
         }
+        if (ev.key === "g") {
+        }
+        if (ev.key === "h") {
+        }
     });
+}
+
+// Generate Galaxies
+
+export function generateGalaxies(galaxyCount) {
+    if (galaxyCount > GALAXY_MAX) galaxyCount = GALAXY_MAX;
+    if (galaxyCount < GALAXY_MIN) galaxyCount = GALAXY_MIN;
+    galaxies = new Array(cubeletCount).fill(false);
+    setOpacities(new Float32Array(cubeletCount).fill(0));
+    for (let i = 0; i < galaxyCount;) {
+        let index = Math.floor(Math.random() * cubeletCount);
+        if (!galaxies[index]) {
+            galaxies[index] = true;
+            opacities[index] = Math.random();
+            i++;
+        }
+    }
+    geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
+    mesh.material.color.set(GALAXY_COLOUR);
+}
+
+export function getGalaxies() {
+    let data = {};
+    let index = 0;
+    for (let i = 0; i < cubeletCount; i++) {
+        if (galaxies[i]) {
+            data[index] = [opacities[i] * DENSITY_MAX, getX(i), getY(i), getZ(i)];
+            index++;
+        }
+    }
+    return JSON.stringify(data);
 }
 
 // Private Functions
@@ -134,15 +183,15 @@ function initializeCube(size) {
 
     // generate cubelet geometry and material
     geometry = new THREE.BoxGeometry(cubeletSize, cubeletSize, cubeletSize);
-    let mat = new THREE.MeshStandardMaterial({
-        color: CUBE_COLOUR,
+    material = new THREE.MeshStandardMaterial({
+        color: DENSITY_COLOUR,
         transparent: true,
         depthWrite: false,
     });
 
 
     // apply custom material shader to allow for opacity changes
-    mat.onBeforeCompile = (shader) => {
+    material.onBeforeCompile = (shader) => {
         shader.vertexShader = `
         attribute float opacity;
         varying float vOpacity;
@@ -166,7 +215,7 @@ function initializeCube(size) {
     geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
 
     // generate mesh of cubelets
-    const mesh = new THREE.InstancedMesh(geometry, mat, cubeletCount);
+    mesh = new THREE.InstancedMesh(geometry, material, cubeletCount);
 
     // initialize meshes
     mesh.castShadow = true;
@@ -199,7 +248,7 @@ function initializeCube(size) {
     scene.add(mesh);
 
     // add soft lighting to scene
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 5));
 }
 
 // Set Opacities from Array
@@ -218,6 +267,7 @@ function setOpacities(array) {
     }
 
     geometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(opacities, 1));
+    mesh.material.color.set(DENSITY_COLOUR);
 }
 
 // Dynamically Resize Container to Window
@@ -245,4 +295,58 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
+}
+
+// Convert (x, y, z) into index
+
+function getIndex(x, y, z) {
+    return (x * cubeLength * cubeLength + y * cubeLength + z)
+}
+
+// Get (x, y, z) from index
+
+function getZ(index) {
+    return Math.floor(index / (cubeLength * cubeLength)) % cubeLength;
+}
+
+function getY(index) {
+    return Math.floor(index / cubeLength) % cubeLength;
+}
+
+function getX(index) {
+    return index % cubeLength;
+}
+
+// Generate Decorative Stars
+
+function generateStars() {
+    let i = 0;
+    const dummy = new THREE.Object3D();
+    const starGeometry = new THREE.BoxGeometry(STAR_SIZE, STAR_SIZE, STAR_SIZE);
+    const starMaterial = new THREE.MeshStandardMaterial({
+        color: STAR_COLOUR,
+        transparent: true,
+        depthWrite: false,
+    });
+    const starMesh = new THREE.InstancedMesh(starGeometry, starMaterial, STAR_COUNT);
+    const starOpacities = new Float32Array(STAR_COUNT);
+
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+        let sector = Math.floor(Math.random() * 7);
+        let x = (sector < 5 && sector != 3);
+        let y = (sector < 2 || sector == 3 || sector == 5);
+        let z = ((sector < 4 && sector != 1) || sector == 6);
+        dummy.position.set(
+            Math.random() * STAR_RANGE + ((x ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) - (CUBE_RENDER_SIZE / 2),
+            Math.random() * STAR_RANGE + ((y ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) - (CUBE_RENDER_SIZE / 2),
+            Math.random() * STAR_RANGE + ((z ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) + (CUBE_RENDER_SIZE / 2)
+        )
+        dummy.updateMatrix();
+        starMesh.setMatrixAt(i, dummy.matrix);
+        starOpacities[i] = Math.random();
+    }
+    starGeometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(starOpacities, 1));
+
+    scene.add(starMesh);
 }

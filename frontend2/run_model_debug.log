@@ -1,0 +1,4 @@
+[run_model.py] Script started!
+[run_model.py] Python version: 3.13.11 (main, Dec  5 2025, 16:06:33) [Clang 21.1.8 ]
+[run_model.py] Loading user_input.npy...
+[run_model.py] Loaded input with shape: (64, 64, 64), dtype: float32
