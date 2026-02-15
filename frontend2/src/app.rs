@@ -157,8 +157,6 @@ pub async fn run_model(
 }
 
 /// Server function that loads a .npy file and returns it as JSON-serialisable data.
-/// `run_id` is a placeholder for a future API parameter (e.g. "run0100_dm").
-///
 /// This function can optionally run inference via `run_model` if a model path is provided.
 #[server]
 pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
@@ -176,34 +174,7 @@ pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
             data
         },
         Err(e) => {
-            println!("[load_npy] Failed to read from disk: {}", e);
-            // Fallback: try to fetch from API (if available)
-            let api_url = format!("http://localhost:8000/api/simulations/{run_id}/npy");
-            println!("[load_npy] Attempting to fetch from API: {}", api_url);
-            match reqwest::get(&api_url).await {
-                Ok(resp) if resp.status().is_success() => {
-                    println!("[load_npy] API request successful");
-                    resp
-                        .bytes()
-                        .await
-                        .map_err(|e| {
-                            let err_msg = format!("Failed to read response body: {}", e);
-                            println!("[load_npy] ERROR: {}", err_msg);
-                            ServerFnError::new(err_msg)
-                        })?
-                        .to_vec()
-                },
-                Ok(resp) => {
-                    let err_msg = format!("API returned non-success status: {}", resp.status());
-                    println!("[load_npy] ERROR: {}", err_msg);
-                    return Err(ServerFnError::new(err_msg));
-                },
-                Err(e) => {
-                    let err_msg = format!("Failed to read {}: {}, and API request failed: {}", path, e, e);
-                    println!("[load_npy] ERROR: {}", err_msg);
-                    return Err(ServerFnError::new(err_msg));
-                }
-            }
+            panic!("[load_npy] Failed to read from disk: {}", e);
         }
     };
 
@@ -660,7 +631,7 @@ fn HomePage() -> impl IntoView {
        <div class="about-overlay" class:open=move || about_open.get()>
            <div class="about-panel">
                <h1 class="about-title">"About"</h1>
-               <p class="about-sub">"Estimator of most significant dark matter clusters over 10 billion years"</p>
+               <p class="about-sub">"Estimator of most significant dark matter clusters over 13 billion years"</p>
 
                <div class="more-info">
                    <p class="more-info-text">
@@ -693,7 +664,7 @@ fn HomePage() -> impl IntoView {
                        <div class="team-text">"Pipeline, Frontend & Visualization"</div>
                    </div>
                    <div class="team-card">
-                       <div class="team-name">"Erin Kavakli"</div>
+                       <div class="team-name">"Eren Kavakli"</div>
                        <div class="team-text">"Backend & Data"</div>
                   </div>
 
