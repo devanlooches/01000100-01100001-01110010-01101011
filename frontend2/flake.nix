@@ -86,6 +86,7 @@
           llvmPackages.clang-unwrapped
           lld
           leptosfmt
+          binaryen
           # Python with specific versions for TensorFlow/ONNX compatibility
           # These versions (TF 1.14.0, ONNX 1.5.0, onnx-tf 1.3.0) are known to work together
           (python313.withPackages (
