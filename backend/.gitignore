@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+.Python
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django-specific
+*.log
+*.pot
+*.sqlite3
+db.sqlite3
+/media/
+/static/
+
+# Sensitive data
+local_settings.py
+.env
+
+# IDE-specific files (optional, depends on preference)
+.idea/  # PyCharm
+.vscode/ # VS Code
+
+# OS-specific files
+.DS_Store
