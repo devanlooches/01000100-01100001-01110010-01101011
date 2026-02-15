@@ -131,10 +131,8 @@ export function listenForKey(key, callback) {
             callback();
         }
         if (ev.key === "g") {
-            generateGalaxies(500);
         }
         if (ev.key === "h") {
-            randomizeOpacities();
         }
     });
 }
@@ -301,27 +299,21 @@ function animate() {
 // Convert (x, y, z) into index
 
 function getIndex(x, y, z) {
-    return (x * cubeletCount * cubeletCount + y * cubeletCount + z)
+    return (x * cubeLength * cubeLength + y * cubeLength + z)
 }
 
 // Get (x, y, z) from index
 
-function getX(index) {
-    index -= getZ(index);
-    index /= cubeletCount;
-    index -= getY(index);
-    index /= cubeletCount;
-    return index % cubeletCount;
+function getZ(index) {
+    return Math.floor(index / (cubeLength * cubeLength)) % cubeLength;
 }
 
 function getY(index) {
-    index -= getZ(index);
-    index /= cubeletCount
-    return index % cubeletCount;
+    return Math.floor(index / cubeLength) % cubeLength;
 }
 
-function getZ(index) {
-    return index % cubeletCount;
+function getX(index) {
+    return index % cubeLength;
 }
 
 // Generate Decorative Stars
@@ -343,11 +335,11 @@ function generateStars() {
         let sector = Math.floor(Math.random() * 7);
         let x = (sector < 5 && sector != 3);
         let y = (sector < 2 || sector == 3 || sector == 5);
-        let z = ((sector < 4 && sector != 1)|| sector == 6);
+        let z = ((sector < 4 && sector != 1) || sector == 6);
         dummy.position.set(
-            Math.random() * STAR_RANGE + ((x ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE)- (CUBE_RENDER_SIZE / 2),
+            Math.random() * STAR_RANGE + ((x ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) - (CUBE_RENDER_SIZE / 2),
             Math.random() * STAR_RANGE + ((y ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) - (CUBE_RENDER_SIZE / 2),
-            Math.random() * STAR_RANGE + ((z ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE)+ (CUBE_RENDER_SIZE / 2)
+            Math.random() * STAR_RANGE + ((z ? (Math.random > 0.5 ? 1 : -1) : 0) * STAR_DISTANCE) + (CUBE_RENDER_SIZE / 2)
         )
         dummy.updateMatrix();
         starMesh.setMatrixAt(i, dummy.matrix);
