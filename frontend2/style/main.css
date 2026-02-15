@@ -412,12 +412,12 @@ html, body {
 
 .audio-player {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 15px;
+    right: 15px;
     z-index: 1000;
-    opacity: 0.8;
+    opacity: 0.2;
 }
 
 .audio-player:hover {
-    opacity: 1;
+    opacity: 0.5;
 }
