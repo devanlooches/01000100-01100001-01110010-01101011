@@ -18,7 +18,7 @@ const DENSITY_COLOUR = new THREE.Color(0xff5500);
 const STAR_COLOUR = new THREE.Color(0xffffff);
 const CUBE_OPACITY_COEFFICIENT = 0.05;
 const CUBE_RENDER_SIZE = 5;
-const MIN_ZOOM = 1;
+const MIN_ZOOM = 0;
 const MAX_ZOOM = 15;
 const DEFUALT_ZOOM = 10;
 const ZOOM_SPEED = 5;
@@ -89,9 +89,9 @@ export function initScene(canvasId, containerId) {
     controls.maxDistance = MAX_ZOOM;
     controls.zoomSpeed = ZOOM_SPEED;
 
-    // initialize cube & cubelets with random opacities
+    // initialize cube and set to invisible, then generate stars
     initializeCube(64);
-    randomizeOpacities();
+    setOpacities(new Float32Array(cubeletCount).fill(0));
     generateStars();
 
     initialized = true;
