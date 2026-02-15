@@ -13,6 +13,18 @@ import numpy as np
 import tensorflow as tf
 import keras
 
+def inverse_transform(data):
+    # 1. Reverse normalization: (data / 1.5) - 1.0  ->  (data + 1.0) * 1.5
+    data = (data + 1.0) * 1.5
+    
+    # 2. Reverse log10: np.log10(x)  ->  10 ** x
+    data = np.power(10, data)
+    
+    # 3. Reverse the shift: x + 1.0 + 1e-5  ->  x - 1.0 - 1e-5
+    data = data - 1.0 - 1e-5
+    
+    return data
+
 # Define custom loss function
 @keras.saving.register_keras_serializable()
 class DiceAndMAE(keras.losses.Loss):
@@ -93,7 +105,9 @@ sys.stderr.flush()
 
 sys.stderr.write("[run_model.py] Running inference...\n")
 sys.stderr.flush()
-output = model(input_data).numpy().squeeze()
+output = model.predict(input_data)[0].squeeze()
+
+output = inverse_transform(output)
 sys.stderr.write(f"[run_model.py] Inference complete! Output shape: {output.shape}, dtype: {output.dtype}\n")
 sys.stderr.flush()
 
