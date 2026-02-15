@@ -115,9 +115,10 @@ export function randomizeOpacities() {
 // Set Opacities from Density Array
 
 export function setOpacitiesFromDensities(array) {
-
     // Convert all densities to opacities
     for (let i = 0; i < array.length; i++) {
+        if(array[i]<0) array[i] = 0;
+        if(array[i]>DENSITY_MAX) array = DENSITY_MAX;
         array[i] = array[i] * CUBE_OPACITY_COEFFICIENT / DENSITY_MAX;
     }
     setOpacities(array);
