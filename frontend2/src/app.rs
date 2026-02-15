@@ -495,7 +495,7 @@ fn HomePage() -> impl IntoView {
                 autoplay=false  // Let user start it manually
                 loop=true
                 controls=true  // Show the play/pause/volume controls
-                src="/darkk.mp3"
+                src="/assets/darkk.mp3"
                 class="audio-player"
             />
 
