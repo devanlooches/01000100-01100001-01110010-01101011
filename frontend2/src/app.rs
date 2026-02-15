@@ -492,7 +492,7 @@ fn HomePage() -> impl IntoView {
         <DarkMatterScene/>
 
           <audio
-                autoplay=false  // Let user start it manually
+                autoplay=true
                 loop=true
                 controls=true  // Show the play/pause/volume controls
                 src="/assets/darkk.mp3"
