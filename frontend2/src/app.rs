@@ -79,10 +79,8 @@ pub async fn run_model(
     println!("[run_model] STEP 3: Executing python3 run_model.py");
     println!("[run_model] ========================================");
     
-    // Run through bash to activate venv first, then execute Python
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg("source .venv/bin/activate && python3 run_model.py")
+    let output = Command::new(".venv/bin/python3.13")
+        .arg("run_model.py")
         .output()
         .map_err(|e| {
             let err_msg = format!("Failed to execute python script: {}", e);
