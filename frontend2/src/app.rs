@@ -680,7 +680,7 @@ fn HomePage() -> impl IntoView {
 
                <div class="team-grid">
                    <div class="team-card">
-                       <div class="team-name">"Miguel Angel"</div>
+                       <div class="team-name">"Miguel Angel Vargas Valencia"</div>
                        <div class="team-text">"Frontend & UI"</div>
                    </div>
                    <div class="team-card">
