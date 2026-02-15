@@ -52,6 +52,38 @@ class DiceAndMAE(keras.losses.Loss):
         # 0.5 means equal attention to shape and intensity.
         return (self.alpha * dice_loss) + ((1 - self.alpha) * mae_loss)
 
+
+@keras.saving.register_keras_serializable()
+class TverskyAndMAE(keras.losses.Loss):
+    def __init__(self, alpha=0.5, beta=2.0, smooth=1e-6, **kwargs):
+        super().__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.smooth = smooth
+        self.mae = keras.losses.MeanAbsoluteError()
+    
+    def call(self, y_true, y_pred):
+        # Threshold to [0, 1] for Tversky computation
+        # Using a soft threshold around 0
+        y_true_binary = tf.nn.sigmoid(y_true * 4)  # Smooth threshold centered at 0
+        y_pred_binary = tf.nn.sigmoid(y_pred * 4)
+        
+        y_true_f = tf.reshape(y_true_binary, [-1])
+        y_pred_f = tf.reshape(y_pred_binary, [-1])
+        
+        tp = tf.reduce_sum(y_true_f * y_pred_f)
+        fp = tf.reduce_sum(y_pred_f * (1 - y_true_f))
+        fn = tf.reduce_sum(y_true_f * (1 - y_pred_f))
+        
+        # Tversky index
+        tversky = (tp + self.smooth) / (tp + self.alpha*fp + self.beta*fn + self.smooth)
+        tversky_loss = 1.0 - tversky
+        
+        # MAE on original continuous values
+        mae_loss = self.mae(y_true, y_pred)
+        
+        return 0.9 * tversky_loss + 0.1 * mae_loss
+
 # Disable Python buffering so prints appear immediately
 os.environ['PYTHONUNBUFFERED'] = '1'
 
@@ -99,7 +131,7 @@ sys.stderr.flush()
 sys.stderr.write("[run_model.py] Loading Keras model...\n")
 sys.stderr.flush()
 warnings.filterwarnings('ignore') # Ignore all the warning messages in this tutorial
-model = tf.keras.models.load_model('model_final.keras', custom_objects={'DiceAndMAE': DiceAndMAE})
+model = tf.keras.models.load_model('model_final_newloss.keras', custom_objects={'DiceAndMAE': DiceAndMAE})
 sys.stderr.write("[run_model.py] Keras model loaded successfully\n")
 sys.stderr.flush()
 
