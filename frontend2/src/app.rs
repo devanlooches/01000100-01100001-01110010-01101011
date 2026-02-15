@@ -4,6 +4,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
+use leptos::task::spawn_local;
 use serde::{Deserialize, Serialize};
 
 /// The parsed contents of a .npy file: a flat data buffer plus its shape.
@@ -230,6 +231,98 @@ pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
     Ok(NpyData { data, shape })
 }
 
+/// Server function that generates a random 64x64x64 array with n random floats
+/// between 1 and 1000, and -1 for the rest.
+///
+/// # Arguments
+/// * `n` - Number of random float elements (1-1000 range). Defaults to random between 50-500 if None
+///
+/// # Returns
+/// NpyData with shape [64, 64, 64] saved as user_input.npy
+#[server]
+pub async fn generate_npy_data(n: Option<u64>) -> Result<NpyData, ServerFnError> {
+    use ndarray::Array3;
+    use rand::distributions::Uniform;
+
+    println!("[generate_npy_data] Called with n: {:?}", n);
+
+    // Determine number of random elements
+    let num_random = if let Some(count) = n {
+        count.min(500).max(50) // Clamp between 50-500
+    } else {
+        // Random between 50-500 if not provided
+        let mut rng = rand::thread_rng();
+        use rand::Rng;
+        rng.gen_range(50..501)
+    };
+
+    println!("[generate_npy_data] Using {} random elements", num_random);
+
+    // Create 64x64x64 array filled with -1.0
+    let mut array: Array3<f32> = Array3::from_elem((64, 64, 64), -1.0);
+    let total_elements = 64 * 64 * 64; // 262144
+
+    // Generate random indices for the non-negative values
+    let mut indices: Vec<usize> = (0..total_elements).collect();
+    
+    // Shuffle indices
+    use rand::seq::SliceRandom;
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    indices.shuffle(&mut rng);
+
+    // Generate random values between 1 and 1000 for first n_random indices
+    let dist = Uniform::new(1.0, 1000.0);
+    for i in 0..num_random.min(total_elements as u64) as usize {
+        let idx = indices[i];
+        let x = idx / (64 * 64);
+        let y = (idx / 64) % 64;
+        let z = idx % 64;
+        array[[x, y, z]] = rng.sample(dist);
+    }
+
+    println!("[generate_npy_data] Generated array with shape: {:?}", array.shape());
+
+    // Flatten to f32 vec
+    let data: Vec<f32> = array.into_iter().collect();
+    let shape = vec![64u64, 64u64, 64u64];
+
+    // Write to user_input.npy - save data as binary with NPY header
+    println!("[generate_npy_data] Writing to user_input.npy...");
+    
+    // Create NPY file manually
+    let mut npy_data = Vec::new();
+    
+    // NPY magic number
+    npy_data.extend_from_slice(b"\x93NUMPY");
+    
+    // Version (1, 0)
+    npy_data.push(1);
+    npy_data.push(0);
+    
+    // Header dict as string
+    let header_dict = format!(
+        "{{'descr': '<f4', 'fortran_order': False, 'shape': (64, 64, 64)}}                                                                             "
+    );
+    let header_len = header_dict.len() as u16;
+    npy_data.extend_from_slice(&header_len.to_le_bytes());
+    npy_data.extend_from_slice(header_dict.as_bytes());
+    
+    // Data (f32 in little-endian)
+    for &val in &data {
+        npy_data.extend_from_slice(&val.to_le_bytes());
+    }
+    
+    std::fs::write("user_input.npy", &npy_data).map_err(|e| {
+        let err_msg = format!("Failed to save user_input.npy: {}", e);
+        println!("[generate_npy_data] ERROR: {}", err_msg);
+        ServerFnError::new(err_msg)
+    })?;
+
+    println!("[generate_npy_data] SUCCESS: Generated and saved user_input.npy with {} elements", data.len());
+    Ok(NpyData { data, shape })
+}
+
 #[cfg(not(feature = "ssr"))]
 use wasm_bindgen::prelude::*;
 
@@ -241,6 +334,9 @@ extern "C" {
 
     #[wasm_bindgen(js_name = listenForKey)]
     fn listen_for_key(key: &str, callback: &Closure<dyn Fn()>);
+
+    #[wasm_bindgen(js_name = setOpacitiesFromDensities)]
+    fn set_opacities_from_densities(array: &[f32]);
 }
 
 #[component]
@@ -269,9 +365,30 @@ fn HomePage() -> impl IntoView {
 
     // NEW: About overlay open/close
     let about_open = RwSignal::new(false);
+    
+    // Galaxy count input state
+    let galaxy_count = RwSignal::new("250".to_string());
+    
+    // Model running state
+    let model_running = RwSignal::new(false);
+    let model_status = RwSignal::new("".to_string());
 
     #[cfg(not(feature = "ssr"))]
     {
+        // Generate random NPY on page load
+        Effect::new(move |_| {
+            spawn_local(async {
+                match generate_npy_data(None).await {
+                    Ok(data) => {
+                        println!("[HomePage] Generated NPY data with shape: {:?}", data.shape);
+                    }
+                    Err(e) => {
+                        eprintln!("[HomePage] Error generating NPY: {:?}", e);
+                    }
+                }
+            });
+        });
+
         // O toggles settings
         let closure = Closure::new(move || {
             settings_open.update(|open| *open = !*open);
@@ -317,10 +434,66 @@ fn HomePage() -> impl IntoView {
                         type="number"
                         min="50"
                         max="500"
-                        value="500"
+                        prop:value=galaxy_count
+                        on:change=move |ev| {
+                            let new_value = event_target_value(&ev);
+                            galaxy_count.set(new_value.clone());
+                            // Call generate_npy_data with the new galaxy count
+                            if let Ok(count) = new_value.parse::<u64>() {
+                                spawn_local(async move {
+                                    match generate_npy_data(Some(count)).await {
+                                        Ok(data) => {
+                                            println!("[HomePage] Generated NPY data with {} elements", data.data.len());
+                                        }
+                                        Err(e) => {
+                                            eprintln!("[HomePage] Error generating NPY: {:?}", e);
+                                        }
+                                    }
+                                });
+                            }
+                        }
                     />
                     <p class="input-note">"Please select a number between 50 and 500"</p>
                 </div>
+                <                button
+                    class="run-model-btn"
+                    on:click=move |_| {
+                        let model_running_clone = model_running.clone();
+                        let model_status_clone = model_status.clone();
+                        spawn_local(async move {
+                            model_running_clone.set(true);
+                            model_status_clone.set("Running model inference...".to_string());
+                            
+                            match run_model(
+                                "user_input.npy".to_string(),
+                                "model_final.keras".to_string(),
+                                None
+                            ).await {
+                                Ok(output_data) => {
+                                    println!("[HomePage] Model inference complete. Output shape: {:?}", output_data.shape);
+                                    
+                                    // Update visualization with output data
+                                    #[cfg(not(feature = "ssr"))]
+                                    {
+                                        set_opacities_from_densities(&output_data.data);
+                                    }
+                                    
+                                    model_status_clone.set("Model complete!".to_string());
+                                }
+                                Err(e) => {
+                                    model_status_clone.set(format!("Error: {:?}", e));
+                                    eprintln!("[HomePage] Model error: {:?}", e);
+                                }
+                            }
+                            
+                            model_running_clone.set(false);
+                        });
+                    }
+                    disabled=model_running
+                >
+                    {move || if model_running.get() { "Running..." } else { "Run Model" }}
+                </button>
+                <p class="model-status">{move || model_status.get()}</p>
                 <p class="settings-hint">"Press O to close"</p>
             </div>
         </div>
