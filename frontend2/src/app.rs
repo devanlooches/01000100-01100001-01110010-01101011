@@ -75,14 +75,11 @@ pub async fn run_model(
         })?;
     println!("[run_model] Successfully wrote user_input.npy");
 
-    // Step 3: Execute Python script through nix develop to ensure dependencies are available
+    // Step 3: Execute Python script using venv
     println!("[run_model] STEP 3: Executing python3 run_model.py");
     println!("[run_model] ========================================");
     
-    let output = Command::new("nix")
-        .arg("develop")
-        .arg("--command")
-        .arg("python3")
+    let output = Command::new(".venv/bin/python3")
         .arg("run_model.py")
         .output()
         .map_err(|e| {
