@@ -121,7 +121,7 @@ fn HomePage() -> impl IntoView {
 
         <div class="ui-overlay">
             <h1 class="title">
-                "01100100011000010111001001101011(DARK)"
+                "01100100 01100001 01110010 01101011 DARK"
             </h1>
 
             <p class="main-hint" class:hidden=move || splash_visible.get()>
@@ -139,6 +139,7 @@ fn HomePage() -> impl IntoView {
                         max="500"
                         value="500"
                     />
+                    <p class="input-note">"Please select a number between 50 and 500"</p>
                 </div>
                 <p class="settings-hint">"Press O to close"</p>
             </div>
@@ -161,7 +162,6 @@ fn HomePage() -> impl IntoView {
                        <div class="team-name">"Miguel Angel"</div>
                        <div class="team-text">"Frontend & UI"</div>
                    </div>
-
                    <div class="team-card">
                        <div class="team-name">"Eric"</div>
                        <div class="team-text">"ML Training"</div>
@@ -171,15 +171,14 @@ fn HomePage() -> impl IntoView {
                        <div class="team-name">"Isaac"</div>
                        <div class="team-text">"Pipeline, Frontend & Visualization"</div>
                    </div>
-
                    <div class="team-card">
                        <div class="team-name">"Erin"</div>
                        <div class="team-text">"Backend & Data"</div>
                   </div>
 
                   <div class="team-card">
-                       <div class="team-name">"Yan"</div>
-                       <div class="team-text">""</div>
+                       <div class="team-name">"Yann"</div>
+                       <div class="team-text">"Frontend & Ml implementation"</div>
                     </div>
                </div>
 
