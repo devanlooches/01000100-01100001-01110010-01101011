@@ -337,6 +337,9 @@ extern "C" {
 
     #[wasm_bindgen(js_name = setOpacitiesFromDensities)]
     fn set_opacities_from_densities(array: &[f32]);
+
+    #[wasm_bindgen(js_name = generateGalaxies)]
+    fn generate_galaxies(count: u32);
 }
 
 #[component]
@@ -387,6 +390,13 @@ fn HomePage() -> impl IntoView {
                     }
                 }
             });
+        });
+
+        // Generate galaxies on page load with default count
+        Effect::new(move |_| {
+            if let Ok(count) = galaxy_count.get().parse::<u32>() {
+                generate_galaxies(count);
+            }
         });
 
         // O toggles settings
@@ -440,6 +450,11 @@ fn HomePage() -> impl IntoView {
                             galaxy_count.set(new_value.clone());
                             // Call generate_npy_data with the new galaxy count
                             if let Ok(count) = new_value.parse::<u64>() {
+                                // Call generateGalaxies on the client
+                                #[cfg(not(feature = "ssr"))]
+                                {
+                                    generate_galaxies(count as u32);
+                                }
                                 spawn_local(async move {
                                     match generate_npy_data(Some(count)).await {
                                         Ok(data) => {
@@ -455,8 +470,34 @@ fn HomePage() -> impl IntoView {
                     />
                     <p class="input-note">"Please select a number between 50 and 500"</p>
                 </div>
-                <                button
-                    class="run-model-btn"
+                <div class="button-group">
+                    <button
+                        class="submit-galaxy-btn"
+                        on:click=move |_| {
+                            let count_str = galaxy_count.get();
+                            if let Ok(count) = count_str.parse::<u64>() {
+                                // Call generateGalaxies on the client
+                                #[cfg(not(feature = "ssr"))]
+                                {
+                                    generate_galaxies(count as u32);
+                                }
+                                spawn_local(async move {
+                                    match generate_npy_data(Some(count)).await {
+                                        Ok(data) => {
+                                            println!("[HomePage] Generated NPY data with {} elements", data.data.len());
+                                        }
+                                        Err(e) => {
+                                            eprintln!("[HomePage] Error generating NPY: {:?}", e);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    >
+                        "Place Galaxies"
+                    </button>
+                    <button
+                        class="run-model-btn"
                     on:click=move |_| {
                         let model_running_clone = model_running.clone();
                         let model_status_clone = model_status.clone();
@@ -492,7 +533,8 @@ fn HomePage() -> impl IntoView {
                     disabled=model_running
                 >
                     {move || if model_running.get() { "Running..." } else { "Run Model" }}
-                </button>
+                    </button>
+                </div>
                 <p class="model-status">{move || model_status.get()}</p>
                 <p class="settings-hint">"Press O to close"</p>
             </div>
