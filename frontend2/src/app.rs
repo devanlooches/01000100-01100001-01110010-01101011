@@ -79,7 +79,7 @@ pub async fn run_model(
     println!("[run_model] STEP 3: Executing python3 run_model.py");
     println!("[run_model] ========================================");
     
-    let output = Command::new(".venv/bin/python3.13")
+    let output = Command::new(".venv/bin/python3")
         .arg("run_model.py")
         .output()
         .map_err(|e| {
@@ -491,6 +491,14 @@ fn HomePage() -> impl IntoView {
     view! {
         <DarkMatterScene/>
 
+          <audio
+                autoplay=false  // Let user start it manually
+                loop=true
+                controls=true  // Show the play/pause/volume controls
+                src="/darkk.mp3"
+                class="audio-player"
+            />
+
         <div
             class="splash"
             class:splash-hidden=move || !splash_visible.get()
@@ -703,6 +711,7 @@ fn HomePage() -> impl IntoView {
         </div>
      }
 }
+
 
 #[component]
 fn DarkMatterScene() -> impl IntoView {

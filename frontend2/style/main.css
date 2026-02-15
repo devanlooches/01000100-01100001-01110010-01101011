@@ -408,3 +408,16 @@ html, body {
     background: rgba(0,150,255,0.2);
     box-shadow: 0 0 15px rgba(0,150,255,0.6);
 }
+
+
+.audio-player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    opacity: 0.8;
+}
+
+.audio-player:hover {
+    opacity: 1;
+}
