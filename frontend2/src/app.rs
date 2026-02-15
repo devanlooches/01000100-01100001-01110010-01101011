@@ -556,6 +556,7 @@ fn HomePage() -> impl IntoView {
                     <button
                         class="submit-galaxy-btn"
                         on:click=move |_| {
+                            galaxy_count.set("".to_string());
                             // Get galaxy data from JavaScript
                             #[cfg(not(feature = "ssr"))]
                             {
