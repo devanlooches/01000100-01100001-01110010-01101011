@@ -441,7 +441,7 @@ fn HomePage() -> impl IntoView {
     let about_open = RwSignal::new(false);
     
     // Galaxy count input state
-    let galaxy_count = RwSignal::new("250".to_string());
+    let galaxy_count = RwSignal::new("".to_string());
     
     // Model running state
     let model_running = RwSignal::new(false);
