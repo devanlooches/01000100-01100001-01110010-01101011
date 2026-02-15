@@ -13,7 +13,7 @@ if (!OrbitControls) {
 // Config
 
 const BG_COLOUR = new THREE.Color(0x000000);
-const GALAXY_COLOUR = new THREE.Color(0xff0000);
+const GALAXY_COLOUR = new THREE.Color(0x00ff00);
 const DENSITY_COLOUR = new THREE.Color(0xff5500);
 const STAR_COLOUR = new THREE.Color(0xffffff);
 const CUBE_OPACITY_COEFFICIENT = 0.05;
@@ -323,6 +323,8 @@ function getY(index) {
 function getZ(index) {
     return index % cubeletCount;
 }
+
+// Generate Decorative Stars
 
 function generateStars() {
     let i = 0;
