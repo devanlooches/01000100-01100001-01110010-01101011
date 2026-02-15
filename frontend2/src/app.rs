@@ -631,7 +631,7 @@ fn HomePage() -> impl IntoView {
        <div class="about-overlay" class:open=move || about_open.get()>
            <div class="about-panel">
                <h1 class="about-title">"About"</h1>
-               <p class="about-sub">"Estimator of most significant dark matter clusters over 10 billion years"</p>
+               <p class="about-sub">"Estimator of most significant dark matter clusters over 13 billion years"</p>
 
                <div class="more-info">
                    <p class="more-info-text">
