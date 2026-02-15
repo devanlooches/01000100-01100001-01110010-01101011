@@ -375,6 +375,9 @@ fn HomePage() -> impl IntoView {
     // Model running state
     let model_running = RwSignal::new(false);
     let model_status = RwSignal::new("".to_string());
+    
+    // Cached precomputed model output (for sneaky background processing)
+    let cached_model_output: RwSignal<Option<NpyData>> = RwSignal::new(None);
 
     #[cfg(not(feature = "ssr"))]
     {
@@ -476,11 +479,7 @@ fn HomePage() -> impl IntoView {
                         on:click=move |_| {
                             let count_str = galaxy_count.get();
                             if let Ok(count) = count_str.parse::<u64>() {
-                                // Call generateGalaxies on the client
-                                #[cfg(not(feature = "ssr"))]
-                                {
-                                    generate_galaxies(count as u32);
-                                }
+                                // Generate NPY data server-side only (no client visualization yet)
                                 spawn_local(async move {
                                     match generate_npy_data(Some(count)).await {
                                         Ok(data) => {
@@ -488,6 +487,24 @@ fn HomePage() -> impl IntoView {
                                         }
                                         Err(e) => {
                                             eprintln!("[HomePage] Error generating NPY: {:?}", e);
+                                        }
+                                    }
+                                });
+                                
+                                // Sneakily start model inference in the background (no UI updates)
+                                spawn_local(async move {
+                                    match run_model(
+                                        "user_input.npy".to_string(),
+                                        "model_final.keras".to_string(),
+                                        None
+                                    ).await {
+                                        Ok(output_data) => {
+                                            println!("[HomePage] Background model inference complete. Output shape: {:?}", output_data.shape);
+                                            // Cache the result but don't update visualization yet
+                                            cached_model_output.set(Some(output_data));
+                                        }
+                                        Err(e) => {
+                                            eprintln!("[HomePage] Background model error: {:?}", e);
                                         }
                                     }
                                 });
@@ -499,37 +516,52 @@ fn HomePage() -> impl IntoView {
                     <button
                         class="run-model-btn"
                     on:click=move |_| {
-                        let model_running_clone = model_running.clone();
-                        let model_status_clone = model_status.clone();
-                        spawn_local(async move {
-                            model_running_clone.set(true);
-                            model_status_clone.set("Running model inference...".to_string());
-                            
-                            match run_model(
-                                "user_input.npy".to_string(),
-                                "model_final.keras".to_string(),
-                                None
-                            ).await {
-                                Ok(output_data) => {
-                                    println!("[HomePage] Model inference complete. Output shape: {:?}", output_data.shape);
-                                    
-                                    // Update visualization with output data
-                                    #[cfg(not(feature = "ssr"))]
-                                    {
-                                        set_opacities_from_densities(&output_data.data);
-                                    }
-                                    
-                                    model_status_clone.set("Model complete!".to_string());
-                                }
-                                Err(e) => {
-                                    model_status_clone.set(format!("Error: {:?}", e));
-                                    eprintln!("[HomePage] Model error: {:?}", e);
-                                }
-                            }
-                            
-                            model_running_clone.set(false);
-                        });
-                    }
+                         let model_running_clone = model_running.clone();
+                         let model_status_clone = model_status.clone();
+                         
+                         // Check if we have cached results from background processing
+                         if let Some(cached_output) = cached_model_output.get() {
+                             // Results already computed in background, apply them immediately
+                             println!("[HomePage] Using cached model inference results");
+                             #[cfg(not(feature = "ssr"))]
+                             {
+                                 set_opacities_from_densities(&cached_output.data);
+                             }
+                             model_status_clone.set("Model complete!".to_string());
+                         } else {
+                             // No cached results yet, show loading message
+                             model_status_clone.set("Model loading... This may take a while".to_string());
+                             
+                             // No cached results, run the model now
+                             spawn_local(async move {
+                                 model_running_clone.set(true);
+                                 
+                                 match run_model(
+                                     "user_input.npy".to_string(),
+                                     "model_final.keras".to_string(),
+                                     None
+                                 ).await {
+                                     Ok(output_data) => {
+                                         println!("[HomePage] Model inference complete. Output shape: {:?}", output_data.shape);
+                                         
+                                         // Update visualization with output data
+                                         #[cfg(not(feature = "ssr"))]
+                                         {
+                                             set_opacities_from_densities(&output_data.data);
+                                         }
+                                         
+                                         model_status_clone.set("Model complete!".to_string());
+                                     }
+                                     Err(e) => {
+                                         model_status_clone.set(format!("Error: {:?}", e));
+                                         eprintln!("[HomePage] Model error: {:?}", e);
+                                     }
+                                 }
+                                 
+                                 model_running_clone.set(false);
+                             });
+                         }
+                     }
                     disabled=model_running
                 >
                     {move || if model_running.get() { "Running..." } else { "Run Model" }}
