@@ -248,7 +248,7 @@ function initializeCube(size) {
     scene.add(mesh);
 
     // add soft lighting to scene
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
 }
 
 // Set Opacities from Array
