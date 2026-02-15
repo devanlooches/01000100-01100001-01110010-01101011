@@ -684,22 +684,22 @@ fn HomePage() -> impl IntoView {
                        <div class="team-text">"Frontend & UI"</div>
                    </div>
                    <div class="team-card">
-                       <div class="team-name">"Eric"</div>
+                       <div class="team-name">"Eric Bao"</div>
                        <div class="team-text">"ML Training"</div>
                    </div>
 
                    <div class="team-card">
-                       <div class="team-name">"Isaac"</div>
+                       <div class="team-name">"Isaac MacKenzie"</div>
                        <div class="team-text">"Pipeline, Frontend & Visualization"</div>
                    </div>
                    <div class="team-card">
-                       <div class="team-name">"Erin"</div>
+                       <div class="team-name">"Erin Kavakli"</div>
                        <div class="team-text">"Backend & Data"</div>
                   </div>
 
                   <div class="team-card">
-                       <div class="team-name">"Yann"</div>
-                       <div class="team-text">"Frontend & Ml implementation"</div>
+                       <div class="team-name">"Yann Quinard"</div>
+                       <div class="team-text">"Fullstack & Ml implementation"</div>
                     </div>
                </div>
 
