@@ -153,8 +153,18 @@ fn HomePage() -> impl IntoView {
 
                <div class="more-info">
                    <p class="more-info-text">
-                       "Our project is a simulation of dark matter dispersal."
+                        "Our project presents an interactive visualization of dark matter dispersal patterns, "
+                        "The methodology implemented in this simulation follows the UNet-based neural network "
+                        "approach detailed in the research by Wang et al. (2024)."
                    </p>
+                   <p class="citation">
+                           "Wang, Z., Shi, F., Yang, X., Li, Q., Liu, Y., & Li, X. (2024). "
+                           <em>"Mapping the large-scale density field of dark matter using artificial intelligence."</em>
+                           " SCIENCE CHINA Physics, Mechanics & Astronomy, 67(1), 219513. "
+                           <a href="https://doi.org/10.1007/s11433-023-2192-9" target="_blank" rel="noopener noreferrer">
+                               "DOI: 10.1007/s11433-023-2192-9"
+                           </a>
+                      </p>
                </div>
 
                <div class="team-grid">

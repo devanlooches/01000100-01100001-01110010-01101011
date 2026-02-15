@@ -1,3 +1,6 @@
+/* ============================================
+   BASE STYLES
+   ============================================ */
 html, body {
     margin: 0;
     padding: 0;
@@ -7,6 +10,9 @@ html, body {
     overflow: hidden;
 }
 
+/* ============================================
+   SCENE & CANVAS
+   ============================================ */
 #scene-container {
     position: fixed;
     inset: 0;
@@ -18,6 +24,9 @@ html, body {
     height: 100%;
 }
 
+/* ============================================
+   UI OVERLAY & MAIN TITLE
+   ============================================ */
 .ui-overlay {
     position: fixed;
     inset: 0;
@@ -40,7 +49,7 @@ html, body {
     color: white;
     animation: pulseGlow 2.5s ease-in-out infinite alternate;
 }
-/*new*/
+
 .main-hint {
     position: absolute;
     bottom: 24px;
@@ -56,8 +65,9 @@ html, body {
     display: none;
 }
 
-/*new*/
-
+/* ============================================
+   SETTINGS PANE
+   ============================================ */
 .settings-pane {
     position: absolute;
     top: 0;
@@ -71,38 +81,11 @@ html, body {
     box-sizing: border-box;
     font-family: system-ui, -apple-system, sans-serif;
     color: #e0e0e0;
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
     transform: translateX(-100%);
     transition: transform 0.25s ease;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 8px 4px;
-    font-size: 16px;
-
-
-
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
-
-    color: #00f5ff;
-    outline: none;
-
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.input-note {
-    margin: 8px 0 0 0;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    font-style: italic;
-    font-weight: 300;
 }
 
 .settings-pane.settings-open {
@@ -122,7 +105,29 @@ html, body {
     color: rgba(255, 255, 255, 0.4);
 }
 
-/*SLPASH WELCOME PAGE*/
+.input-group input {
+    width: 100%;
+    padding: 8px 4px;
+    font-size: 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    color: #00f5ff;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-note {
+    margin: 8px 0 0 0;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    font-weight: 300;
+}
+
+/* ============================================
+   SPLASH SCREEN
+   ============================================ */
 .splash {
     position: absolute;
     inset: 0;
@@ -137,10 +142,16 @@ html, body {
     transition: opacity 0.5s ease;
 }
 
+.splash-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
 .splash-title {
     font-size: 100px;
     color: white;
     animation: pulseGlow 2.5s ease-in-out infinite alternate;
+    transition: all 0.3s ease;
 }
 
 .splash-title:hover {
@@ -150,8 +161,27 @@ html, body {
         0 0 60px rgba(180, 100, 255, 0.9),
         0 0 100px rgba(150, 80, 255, 0.8),
         0 0 150px rgba(130, 60, 255, 0.6);
-    transform: scale(1.05);
-    transition: all 0.3s ease;
+}
+
+.splash-sub {
+    font-size: 27px;
+    color: white;
+    margin-top: 10px;
+    opacity: 0.5;
+}
+
+/* Splash Animations */
+@keyframes pulseGlow {
+    from {
+        text-shadow:
+            0 0 10px rgba(200,150,255,0.5),
+            0 0 20px rgba(180,100,255,0.4);
+    }
+    to {
+        text-shadow:
+            0 0 25px rgba(220,170,255,0.9),
+            0 0 50px rgba(160,90,255,0.8);
+    }
 }
 
 @keyframes intensePulse {
@@ -169,153 +199,150 @@ html, body {
     }
 }
 
-@keyframes pulseGlow {
-    from {
-            text-shadow:
-                0 0 10px rgba(200,150,255,0.5),
-                0 0 20px rgba(180,100,255,0.4);
-        }
-        to {
-            text-shadow:
-                0 0 25px rgba(220,170,255,0.9),
-                0 0 50px rgba(160,90,255,0.8);
-        }
-}
-
-.splash-sub {
-    font-size: 27px;
-    color: white;
-    margin-top: 10px;
-    opacity: 0.5;
-}
-
-.splash-hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
+/* ============================================
+   ABOUT OVERLAY
+   ============================================ */
 .about-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  backdrop-filter: blur(8px);
-  display: none;
-  z-index: 9999;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(8px);
+    display: none;
+    z-index: 9999;
 }
 
 .about-overlay.open {
-  overflow-y: auto;
-  display: block;
+    overflow-y: auto;
+    display: block;
 }
 
-/* Panel */
 .about-panel {
-  max-width: 950px;
-  margin: 80px auto;
-  padding: 50px 30px;
-  color: white;
-  text-align: center;
-  font-family: 'Inter', sans-serif;
+    max-width: 950px;
+    margin: 80px auto;
+    padding: 50px 30px;
+    color: white;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
 }
 
-/* 🔥 Cinematic glowing title */
 .about-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 64px;
-  letter-spacing: 3px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #ffffff;
-  text-shadow:
-    0 0 10px rgba(0, 150, 255, 0.8),
-    0 0 20px rgba(0, 150, 255, 0.6),
-    0 0 40px rgba(0, 150, 255, 0.4);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 64px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #ffffff;
+    text-shadow:
+        0 0 10px rgba(0, 150, 255, 0.8),
+        0 0 20px rgba(0, 150, 255, 0.6),
+        0 0 40px rgba(0, 150, 255, 0.4);
 }
 
-/* Subtitle */
 .about-sub {
-  font-size: 22px;
-  font-weight: 300;
-  opacity: 0.8;
-  margin-bottom: 40px;
-  letter-spacing: 1px;
+    font-size: 22px;
+    font-weight: 300;
+    opacity: 0.8;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
 }
 
-/* Description */
 .more-info-text {
-  font-size: 20px;
-  font-weight: 300;
-  line-height: 1.7;
-  max-width: 700px;
-  margin: 0 auto 50px auto;
-  opacity: 0.85;
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 700px;
+    margin: 0 auto 50px auto;
+    opacity: 0.85;
 }
 
-/* Team Grid */
-.team-grid {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
+.citation {
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 20px auto 40 auto;
+    opacity: 0.75;
+    text-align: left;
+    padding: 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
 }
 
-/* Team Cards */
-.team-card {
-  background: rgba(255,255,255,0.05);
-  padding: 25px 30px;
-  border-radius: 12px;
-  min-width: 220px;
-  transition: 0.3s ease;
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.08);
+.citation em {
+    font-style: italic;
 }
 
-.team-card:hover {
-  transform: translateY(-8px);
-  background: rgba(0, 150, 255, 0.08);
-  border: 1px solid rgba(0,150,255,0.4);
+.citation a {
+    color: #00d4ff;
+    text-decoration: none;
+    transition: color 0.3s ease;
 }
 
-/* Names */
-.team-name {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-}
-
-/* Roles */
-.team-text {
-  font-size: 16px;
-  font-weight: 300;
-  opacity: 0.85;
-}
-
-/* Button */
-.back-btn {
-  margin-top: 50px;
-  padding: 12px 28px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(0,150,255,0.6);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-.back-btn:hover {
-  background: rgba(0,150,255,0.2);
-  box-shadow: 0 0 15px rgba(0,150,255,0.6);
+.citation a:hover {
+    color: #00f5ff;
+    text-decoration: underline;
 }
 
 .about-hint {
-  margin-top: 20px;
-  font-size: 14px;
-  opacity: 0.5;
-  letter-spacing: 1px;
+    margin-top: 20px;
+    font-size: 14px;
+    opacity: 0.5;
+    letter-spacing: 1px;
 }
 
-/*-------------------------------------------*/
+/* About Team Section */
+.team-grid {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.team-card {
+    background: rgba(255,255,255,0.05);
+    padding: 25px 30px;
+    border-radius: 12px;
+    min-width: 220px;
+    transition: 0.3s ease;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.team-card:hover {
+    transform: translateY(-8px);
+    background: rgba(0, 150, 255, 0.08);
+    border: 1px solid rgba(0,150,255,0.4);
+}
+
+.team-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.team-text {
+    font-size: 16px;
+    font-weight: 300;
+    opacity: 0.85;
+}
+
+/* About Button */
+.back-btn {
+    margin-top: 50px;
+    padding: 12px 28px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(0,150,255,0.6);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.back-btn:hover {
+    background: rgba(0,150,255,0.2);
+    box-shadow: 0 0 15px rgba(0,150,255,0.6);
+}
