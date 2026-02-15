@@ -13,7 +13,7 @@ if (!OrbitControls) {
 // Config
 
 const BG_COLOUR = new THREE.Color(0x000000);
-const GALAXY_COLOUR = new THREE.Color(0x00ff00);
+const GALAXY_COLOUR = new THREE.Color(0x00ffff);
 const DENSITY_COLOUR = new THREE.Color(0xff5500);
 const STAR_COLOUR = new THREE.Color(0xffffff);
 const CUBE_OPACITY_COEFFICIENT = 0.05;
@@ -117,11 +117,12 @@ export function randomizeOpacities() {
 export function setOpacitiesFromDensities(array) {
     // Convert all densities to opacities
     for (let i = 0; i < array.length; i++) {
-        if(array[i]<0) array[i] = 0;
-        if(array[i]>DENSITY_MAX) array = DENSITY_MAX;
+        if (array[i] < 0) array[i] = 0;
+        if (array[i] > DENSITY_MAX) array = DENSITY_MAX;
         array[i] = array[i] * CUBE_OPACITY_COEFFICIENT / DENSITY_MAX;
     }
     setOpacities(array);
+    showGalaxies();
 }
 
 // Keypress Listener
@@ -349,4 +350,13 @@ function generateStars() {
     starGeometry.setAttribute('opacity', new THREE.InstancedBufferAttribute(starOpacities, 1));
 
     scene.add(starMesh);
+}
+
+function showGalaxies() {
+    for (let i = 0; i < galaxies.length; i++) {
+        if (galaxies[i]) {
+            opacities[i] = 1;
+        }
+    }
+    geometry.attributes.opacity.needsUpdate = true;
 }
