@@ -238,6 +238,74 @@ pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
 /// * `n` - Number of random float elements (1-1000 range). Defaults to random between 50-500 if None
 ///
 /// # Returns
+/// Save galaxy data from JavaScript to user_input.npy
+#[server]
+pub async fn save_galaxy_data(galaxy_json: String) -> Result<(), ServerFnError> {
+    use serde_json::Value;
+
+    println!("[save_galaxy_data] Received galaxy data JSON");
+
+    // Parse the galaxy JSON
+    let galaxy_map: Value = serde_json::from_str(&galaxy_json)
+        .map_err(|e| ServerFnError::new(format!("Failed to parse galaxy JSON: {}", e)))?;
+
+    // Create grid filled with -1.0 (64, 64, 64)
+    let mut array_data = vec![-1.0; 64 * 64 * 64];
+
+    // Fill the grid with proper density values
+    if let Some(obj) = galaxy_map.as_object() {
+        for (_, value) in obj.iter() {
+            if let Some(arr) = value.as_array() {
+                if arr.len() >= 4 {
+                    // Array format: [density, x, y, z]
+                    let density = arr[0].as_f64().unwrap_or(-1.0) as f32;
+                    let x = arr[1].as_u64().unwrap_or(0) as usize;
+                    let y = arr[2].as_u64().unwrap_or(0) as usize;
+                    let z = arr[3].as_u64().unwrap_or(0) as usize;
+
+                    // grid[x, y, z] = density
+                    if x < 64 && y < 64 && z < 64 {
+                        let index = x * 64 * 64 + y * 64 + z;
+                        array_data[index] = density;
+                    }
+                }
+            }
+        }
+    }
+
+    // Write to user_input.npy - save data as binary with NPY header
+    let mut npy_data = Vec::new();
+    
+    // NPY magic number
+    npy_data.extend_from_slice(b"\x93NUMPY");
+    
+    // Version (1, 0)
+    npy_data.push(1);
+    npy_data.push(0);
+    
+    // Header dict as string
+    let header_dict = format!(
+        "{{'descr': '<f4', 'fortran_order': False, 'shape': (64, 64, 64)}}                                                                             "
+    );
+    let header_len = header_dict.len() as u16;
+    npy_data.extend_from_slice(&header_len.to_le_bytes());
+    npy_data.extend_from_slice(header_dict.as_bytes());
+    
+    // Data (f32 in little-endian)
+    for &val in &array_data {
+        npy_data.extend_from_slice(&val.to_le_bytes());
+    }
+    
+    std::fs::write("user_input.npy", &npy_data).map_err(|e| {
+        let err_msg = format!("Failed to save user_input.npy: {}", e);
+        println!("[save_galaxy_data] ERROR: {}", err_msg);
+        ServerFnError::new(err_msg)
+    })?;
+
+    println!("[save_galaxy_data] SUCCESS: Galaxy data saved to user_input.npy");
+    Ok(())
+}
+
 /// NpyData with shape [64, 64, 64] saved as user_input.npy
 #[server]
 pub async fn generate_npy_data(n: Option<u64>) -> Result<NpyData, ServerFnError> {
@@ -340,6 +408,9 @@ extern "C" {
 
     #[wasm_bindgen(js_name = generateGalaxies)]
     fn generate_galaxies(count: u32);
+
+    #[wasm_bindgen(js_name = getGalaxies)]
+    fn get_galaxies() -> String;
 }
 
 #[component]
@@ -477,38 +548,41 @@ fn HomePage() -> impl IntoView {
                     <button
                         class="submit-galaxy-btn"
                         on:click=move |_| {
-                            let count_str = galaxy_count.get();
-                            if let Ok(count) = count_str.parse::<u64>() {
-                                // Generate NPY data server-side only (no client visualization yet)
-                                spawn_local(async move {
-                                    match generate_npy_data(Some(count)).await {
-                                        Ok(data) => {
-                                            println!("[HomePage] Generated NPY data with {} elements", data.data.len());
-                                        }
-                                        Err(e) => {
-                                            eprintln!("[HomePage] Error generating NPY: {:?}", e);
-                                        }
-                                    }
-                                });
+                            // Get galaxy data from JavaScript
+                            #[cfg(not(feature = "ssr"))]
+                            {
+                                let galaxy_json = get_galaxies();
                                 
-                                // Sneakily start model inference in the background (no UI updates)
+                                // Save galaxy data to server (creates user_input.npy)
                                 spawn_local(async move {
-                                    match run_model(
-                                        "user_input.npy".to_string(),
-                                        "model_final.keras".to_string(),
-                                        None
-                                    ).await {
-                                        Ok(output_data) => {
-                                            println!("[HomePage] Background model inference complete. Output shape: {:?}", output_data.shape);
-                                            // Cache the result but don't update visualization yet
-                                            cached_model_output.set(Some(output_data));
+                                    match save_galaxy_data(galaxy_json).await {
+                                        Ok(_) => {
+                                            println!("[HomePage] Galaxy data saved successfully");
                                         }
                                         Err(e) => {
-                                            eprintln!("[HomePage] Background model error: {:?}", e);
+                                            eprintln!("[HomePage] Error saving galaxy data: {:?}", e);
                                         }
                                     }
                                 });
                             }
+                            
+                            // Sneakily start model inference in the background (no UI updates)
+                            spawn_local(async move {
+                                match run_model(
+                                    "user_input.npy".to_string(),
+                                    "model_final.keras".to_string(),
+                                    None
+                                ).await {
+                                    Ok(output_data) => {
+                                        println!("[HomePage] Background model inference complete. Output shape: {:?}", output_data.shape);
+                                        // Cache the result but don't update visualization yet
+                                        cached_model_output.set(Some(output_data));
+                                    }
+                                    Err(e) => {
+                                        eprintln!("[HomePage] Background model error: {:?}", e);
+                                    }
+                                }
+                            });
                         }
                     >
                         "Place Galaxies"
@@ -520,12 +594,13 @@ fn HomePage() -> impl IntoView {
                          let model_status_clone = model_status.clone();
                          
                          // Check if we have cached results from background processing
-                         if let Some(cached_output) = cached_model_output.get() {
+                         if let Some(_cached_output_data) = cached_model_output.get() {
                              // Results already computed in background, apply them immediately
                              println!("[HomePage] Using cached model inference results");
                              #[cfg(not(feature = "ssr"))]
                              {
-                                 set_opacities_from_densities(&cached_output.data);
+                                 let cached_output_data = _cached_output_data;
+                                 set_opacities_from_densities(&cached_output_data.data);
                              }
                              model_status_clone.set("Model complete!".to_string());
                          } else {

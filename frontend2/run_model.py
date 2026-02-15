@@ -56,6 +56,21 @@ sys.stderr.write("[run_model.py] Loading user_input.npy...\n")
 sys.stderr.flush()
 input_data = np.load("user_input.npy")
 
+# Print the loaded array for debugging
+sys.stderr.write(f"[run_model.py] Loaded array:\n{input_data}\n")
+sys.stderr.flush()
+
+# input_data = list(input_data.values())
+    
+# grid = np.full((64, 64, 64), -1.0)
+
+# # Fill the grid with the proper density values
+# for entry in input_data:
+#     density, x, y, z = entry
+#     grid[int(x), int(y), int(z)] = density
+
+# input_data = grid
+
 with open('run_model_debug.log', 'a') as f:
     f.write(f"[run_model.py] Loaded input with shape: {input_data.shape}, dtype: {input_data.dtype}\n")
 
