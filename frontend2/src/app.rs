@@ -15,38 +15,218 @@ pub struct NpyData {
     pub shape: Vec<u64>,
 }
 
+/// Server function that runs a TensorFlow model on input data via a Python script.
+/// 
+/// Workflow:
+/// 1. Loads the input .npy file from disk
+/// 2. Writes it to "user_input.npy"
+/// 3. Calls the Python script: python3 run_model.py
+/// 4. Reads the output from "output.npy" that the Python script generates
+/// 5. Returns the results as NpyData
+///
+/// # Arguments
+/// * `input_npy_path` - Path to the input .npy file (e.g., "run0100_dm.npy")
+/// * `model_path` - Path to the model file (not used by simplified version but kept for API compatibility)
+/// * `temp_output_path` - Not used in file-based version
+///
+/// # Returns
+/// The inference output as NpyData (flattened array + shape)
+#[server]
+pub async fn run_model(
+    input_npy_path: String,
+    model_path: String,
+    temp_output_path: Option<String>,
+) -> Result<NpyData, ServerFnError> {
+    use std::process::Command;
+    use std::path::Path;
+    use npyz::NpyFile;
+
+    println!("[run_model] ========================================");
+    println!("[run_model] Called with:");
+    println!("[run_model]   input_npy_path: {}", input_npy_path);
+    println!("[run_model]   model_path: {}", model_path);
+    println!("[run_model]   temp_output_path: {:?}", temp_output_path);
+    println!("[run_model] ========================================");
+
+    // Step 1: Read input file
+    println!("[run_model] STEP 1: Reading input file");
+    if !Path::new(&input_npy_path).exists() {
+        let err_msg = format!("Input file not found: {}", input_npy_path);
+        println!("[run_model] ERROR: {}", err_msg);
+        return Err(ServerFnError::new(err_msg));
+    }
+
+    let input_bytes = std::fs::read(&input_npy_path)
+        .map_err(|e| {
+            let err_msg = format!("Failed to read input file: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+    println!("[run_model] Read {} bytes from {}", input_bytes.len(), input_npy_path);
+
+    // Step 2: Write to user_input.npy
+    println!("[run_model] STEP 2: Writing to user_input.npy");
+    std::fs::write("user_input.npy", &input_bytes)
+        .map_err(|e| {
+            let err_msg = format!("Failed to write user_input.npy: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+    println!("[run_model] Successfully wrote user_input.npy");
+
+    // Step 3: Execute Python script
+    println!("[run_model] STEP 3: Executing python3 run_model.py");
+    println!("[run_model] ========================================");
+    
+    let output = Command::new("python3")
+        .arg("run_model.py")
+        .output()
+        .map_err(|e| {
+            let err_msg = format!("Failed to execute python script: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    
+    println!("[run_model] Python script output:");
+    
+    if !stdout.is_empty() {
+        println!("[run_model] --- STDOUT ---");
+        println!("{}", stdout);
+    }
+    
+    if !stderr.is_empty() {
+        println!("[run_model] --- STDERR ---");
+        println!("{}", stderr);
+    }
+    
+    if stdout.is_empty() && stderr.is_empty() {
+        println!("[run_model] (No output captured)");
+    }
+    println!("[run_model] ========================================");
+
+    if !output.status.success() {
+        let err_msg = format!("Python script failed with exit code: {}", output.status);
+        println!("[run_model] ERROR: {}", err_msg);
+        return Err(ServerFnError::new(err_msg));
+    }
+    println!("[run_model] Python script executed successfully");
+
+    // Step 4: Read output.npy
+    println!("[run_model] STEP 4: Reading output.npy");
+    if !Path::new("output.npy").exists() {
+        let err_msg = "Python script did not create output.npy file".to_string();
+        println!("[run_model] ERROR: {}", err_msg);
+        return Err(ServerFnError::new(err_msg));
+    }
+
+    let output_bytes = std::fs::read("output.npy")
+        .map_err(|e| {
+            let err_msg = format!("Failed to read output.npy: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+    println!("[run_model] Read {} bytes from output.npy", output_bytes.len());
+
+    // Step 5: Parse output.npy
+    println!("[run_model] STEP 5: Parsing output.npy");
+    let npy = NpyFile::new(&output_bytes[..])
+        .map_err(|e| {
+            let err_msg = format!("Failed to parse output.npy: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+
+    let shape = npy.shape().to_vec();
+    println!("[run_model] Parsed shape: {:?}", shape);
+
+    let data: Vec<f32> = npy
+        .into_vec::<f32>()
+        .map_err(|e| {
+            let err_msg = format!("Failed to read output.npy data as f32: {}", e);
+            println!("[run_model] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
+
+    println!("[run_model] SUCCESS: Loaded {} f32 values with shape {:?}", data.len(), shape);
+    println!("[run_model] ========================================");
+    Ok(NpyData { data, shape })
+}
+
 /// Server function that loads a .npy file and returns it as JSON-serialisable data.
 /// `run_id` is a placeholder for a future API parameter (e.g. "run0100_dm").
+///
+/// This function can optionally run inference via `run_model` if a model path is provided.
 #[server]
 pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
     use npyz::NpyFile;
 
-    // TODO: update the base URL once the Django API is deployed.
-    let api_url = format!("http://localhost:8000/api/simulations/{run_id}/npy");
+    println!("[load_npy] Called with run_id: {}", run_id);
 
-    let bytes = match reqwest::get(&api_url).await {
-        Ok(resp) if resp.status().is_success() => resp
-            .bytes()
-            .await
-            .map_err(|e| ServerFnError::new(format!("failed to read response body: {e}")))?
-            .to_vec(),
-        _ => {
-            // Fallback: read from local disk while the API is not yet available.
-            let path = format!("{run_id}.npy");
-            std::fs::read(&path)
-                .map_err(|e| ServerFnError::new(format!("failed to read {path}: {e}")))?
+    // First, try to read the .npy file from disk
+    let path = format!("{run_id}.npy");
+    println!("[load_npy] Attempting to read from disk: {}", path);
+    
+    let bytes = match std::fs::read(&path) {
+        Ok(data) => {
+            println!("[load_npy] Successfully read {} bytes from disk", data.len());
+            data
+        },
+        Err(e) => {
+            println!("[load_npy] Failed to read from disk: {}", e);
+            // Fallback: try to fetch from API (if available)
+            let api_url = format!("http://localhost:8000/api/simulations/{run_id}/npy");
+            println!("[load_npy] Attempting to fetch from API: {}", api_url);
+            match reqwest::get(&api_url).await {
+                Ok(resp) if resp.status().is_success() => {
+                    println!("[load_npy] API request successful");
+                    resp
+                        .bytes()
+                        .await
+                        .map_err(|e| {
+                            let err_msg = format!("Failed to read response body: {}", e);
+                            println!("[load_npy] ERROR: {}", err_msg);
+                            ServerFnError::new(err_msg)
+                        })?
+                        .to_vec()
+                },
+                Ok(resp) => {
+                    let err_msg = format!("API returned non-success status: {}", resp.status());
+                    println!("[load_npy] ERROR: {}", err_msg);
+                    return Err(ServerFnError::new(err_msg));
+                },
+                Err(e) => {
+                    let err_msg = format!("Failed to read {}: {}, and API request failed: {}", path, e, e);
+                    println!("[load_npy] ERROR: {}", err_msg);
+                    return Err(ServerFnError::new(err_msg));
+                }
+            }
         }
     };
 
+    // Parse the .npy file
+    println!("[load_npy] Parsing .npy file from {} bytes", bytes.len());
     let npy = NpyFile::new(&bytes[..])
-        .map_err(|e| ServerFnError::new(format!("failed to parse npy: {e}")))?;
+        .map_err(|e| {
+            let err_msg = format!("Failed to parse npy: {}", e);
+            println!("[load_npy] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
 
     let shape = npy.shape().to_vec();
+    println!("[load_npy] Parsed shape: {:?}", shape);
 
     let data: Vec<f32> = npy
         .into_vec::<f32>()
-        .map_err(|e| ServerFnError::new(format!("failed to read npy data as f32: {e}")))?;
+        .map_err(|e| {
+            let err_msg = format!("Failed to read npy data as f32: {}", e);
+            println!("[load_npy] ERROR: {}", err_msg);
+            ServerFnError::new(err_msg)
+        })?;
 
+    println!("[load_npy] SUCCESS: Loaded {} f32 values with shape {:?}", data.len(), shape);
     Ok(NpyData { data, shape })
 }
 
@@ -196,10 +376,10 @@ fn HomePage() -> impl IntoView {
                    "Back"
                </button>
 
-               <p class="about-hint">"Press I to close"</p>
-           </div>
-       </div>
-    }
+                <p class="about-hint">"Press I to close"</p>
+            </div>
+        </div>
+     }
 }
 
 #[component]
