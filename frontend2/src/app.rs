@@ -174,7 +174,7 @@ pub async fn load_npy(run_id: String) -> Result<NpyData, ServerFnError> {
             data
         },
         Err(e) => {
-            println!("[load_npy] Failed to read from disk: {}", e);
+            panic!("[load_npy] Failed to read from disk: {}", e);
         }
     };
 
